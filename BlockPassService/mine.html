@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+</head>
+<style media="screen">
+  .center {
+    text-align: center;
+  }
+</style>
+
+<body>
+  <input type="button" id="homeBtn" value="홈 화면으로">
+  <br><br>
+  ID : <input type="text" id="inputId" value="">
+  Key : <input type="text" id="inputKey" value="">
+  <br>
+  <input type="button" id="mineBtn" value="채굴하기">
+  <input type="button" id="viewBtn" value="블록정보 보기">
+  <br><br>
+  <span id="getBlockResult"></span>
+</body>
+<script src="http://code.jquery.com/jquery-latest.min.js">
+</script>
+<script>
+  var veryFastClicked = false;
+  $("#mineBtn").click(function() {
+    if (veryFastClicked == true) {
+      return
+    }
+    veryFastClicked = true;
+    var inputId = $("#inputId").val();
+    var regType1 = new RegExp("[^A-Za-z0-9_]");
+    if (inputId == '') {
+      alert('ID를 입력해주세요.');
+      return;
+    } else if (regType1.test(inputId)) {
+      alert('올바른 ID를 입력해주세요.');
+      return;
+    }
+    var inputKey = $("#inputKey").val();
+    var regType2 = new RegExp("[^0-9]");
+    if (inputKey == '') {
+      alert('Key를 입력해주세요.');
+      return;
+    } else if (regType2.test(inputKey)) {
+      alert('올바른 Key를 입력해주세요.');
+      return;
+    }
+
+    $.ajax({
+      url: `/block/generateBlock`,
+      type: 'GET',
+      data: {
+        id: inputId,
+        key: inputKey
+      },
+      success: function(response) {
+        var resultMessage = response.SUCCESS
+        if (resultMessage == 'URL_PROBLEM') {
+          alert('올바른 URL을 입력해주세요.')
+        } else if (resultMessage == 'NO_MATCH') {
+          alert('일치하는 사용자가 없습니다.')
+        } else if (resultMessage == 'MATCH') {
+          alert('채굴정보도착')
+        }
+        veryFastClicked = false;
+      }
+    });
+  });
+
+  $("#homeBtn").click(function() {
+    location.href = "/"
+  });
+
+  var veryFastClicked2 = false;
+  $("#viewBtn").click(function() {
+    if (veryFastClicked2 == true) {
+      return
+    }
+    $.ajax({
+      url: `/block/getBlockData`,
+      type: 'GET',
+      data: {},
+      success: function(response) {
+        if (response.length > 0) {
+          if (response[0] == "no data exists") {
+            alert('블록 정보가 없습니다.')
+            $("#getBlockResult").html('');
+            veryFastClicked = false;
+            return;
+          }
+        }
+        var resultString = `
+        <table width='100%' border=1>
+        <tr>
+        <td width='10' class = 'center'>Index</td>
+        <td width='20' class = 'center'>PreviousHash</td>
+        <td width='20' class = 'center'>CurrentHash</td>
+        <td width='10' class = 'center'>Timestamp</td>
+        <td width='10' class = 'center'>Proof</td>
+        <td width='30' class = 'center'>Data</td>
+        </tr>`;
+        for (var i = 0; i < response.length; i++) {
+          resultString += '<tr>'
+          resultString += `<td class = 'center'>${response[i].index}</td>`
+          resultString += `<td class = 'center'>${response[i].previousHash}</td>`
+          resultString += `<td class = 'center'>${response[i].currentHash}</td>`
+          resultString += `<td class = 'center'>${response[i].timestamp}</td>`
+          resultString += `<td class = 'center'>${response[i].proof}</td>`
+          resultString += `<td>${response[i].data}</td>`
+          resultString += '</tr>'
+        }
+        resultString += `</table>`
+        $("#getBlockResult").html(resultString);
+        veryFastClicked = false;
+      }
+    });
+  });
+</script>
+
+</html>
